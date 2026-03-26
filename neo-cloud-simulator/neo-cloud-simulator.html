@@ -872,74 +872,81 @@
         function applyDecisions() {
             const { pricing, infrastructure, sales, customer } = gameState.currentDecisions;
 
-            // Store previous quarter's base burn rate if not set
-            if (!gameState.baseBurnRate) {
-                gameState.baseBurnRate = 400000; // Initial base burn
-            }
+            // Reset to base values each quarter
+            // Decisions represent THIS quarter's strategy, not cumulative changes
+            const BASE_MARGIN = 20;
+            const BASE_GROWTH = 15;
+            const BASE_CHURN = 5;
+            const BASE_BURN = 400000;
+            const BASE_LTV = 180000;
+            const BASE_CAC = 50000;
 
-            // Reset to base burn rate before applying this quarter's decisions
-            // This ensures we're making marginal changes, not cumulative ones
-            let quarterlyBurnModifier = 0;
+            // Start fresh each quarter
+            let margin = BASE_MARGIN;
+            let growth = BASE_GROWTH;
+            let churn = BASE_CHURN;
+            let burn = BASE_BURN;
+            let ltv = BASE_LTV;
+            let cac = BASE_CAC;
 
             // Pricing impact
             if (pricing === 'premium') {
-                gameState.grossMargin += 5;
-                gameState.revenueGrowth -= 3;
-                gameState.churnRate -= 1;
+                margin += 5;
+                growth -= 3;
+                churn -= 1;
             } else if (pricing === 'aggressive') {
-                gameState.grossMargin -= 5;
-                gameState.revenueGrowth += 5;
-                gameState.churnRate += 2;
+                margin -= 5;
+                growth += 5;
+                churn += 2;
             }
 
             // Infrastructure impact
             if (infrastructure === 'performance') {
-                gameState.grossMargin += 3;
-                quarterlyBurnModifier += 50000;
+                margin += 3;
+                burn += 50000;
             } else if (infrastructure === 'features') {
-                gameState.revenueGrowth += 4;
-                quarterlyBurnModifier += 80000;
-                gameState.cac -= 5000;
+                growth += 4;
+                burn += 80000;
+                cac -= 5000;
             } else if (infrastructure === 'minimal') {
-                quarterlyBurnModifier -= 30000;
-                gameState.churnRate += 1;
+                burn -= 30000;
+                churn += 1;
             }
 
             // Sales impact
             if (sales === 'aggressive') {
-                gameState.revenueGrowth += 8;
-                quarterlyBurnModifier += 180000;
-                gameState.teamSize += 3;
+                growth += 8;
+                burn += 180000;
+                gameState.teamSize += 3; // Team size IS cumulative
             } else if (sales === 'balanced') {
-                gameState.revenueGrowth += 4;
-                quarterlyBurnModifier += 80000;
-                gameState.teamSize += 1;
+                growth += 4;
+                burn += 80000;
+                gameState.teamSize += 1; // Team size IS cumulative
             } else if (sales === 'lean') {
-                gameState.revenueGrowth += 1;
-                quarterlyBurnModifier -= 20000;
+                growth += 1;
+                burn -= 20000;
             }
-
-            // Apply the burn modifier to the base burn rate (one-time permanent increase)
-            gameState.baseBurnRate += quarterlyBurnModifier;
-            gameState.burnRate = gameState.baseBurnRate;
 
             // Customer segment impact
             if (customer === 'enterprise') {
-                gameState.ltv += 40000;
-                gameState.cac += 20000;
-                gameState.churnRate -= 2;
-                gameState.revenueGrowth -= 2; // Slower sales cycles
+                ltv += 40000;
+                cac += 20000;
+                churn -= 2;
+                growth -= 2;
             } else if (customer === 'smb') {
-                gameState.ltv -= 30000;
-                gameState.cac -= 15000;
-                gameState.churnRate += 3;
-                gameState.revenueGrowth += 3;
+                ltv -= 30000;
+                cac -= 15000;
+                churn += 3;
+                growth += 3;
             }
 
-            // Bounds checking
-            gameState.grossMargin = Math.max(10, Math.min(70, gameState.grossMargin));
-            gameState.revenueGrowth = Math.max(0, Math.min(50, gameState.revenueGrowth));
-            gameState.churnRate = Math.max(1, Math.min(15, gameState.churnRate));
+            // Apply bounds checking and set game state
+            gameState.grossMargin = Math.max(10, Math.min(70, margin));
+            gameState.revenueGrowth = Math.max(0, Math.min(50, growth));
+            gameState.churnRate = Math.max(1, Math.min(15, churn));
+            gameState.burnRate = burn;
+            gameState.ltv = Math.max(50000, ltv);
+            gameState.cac = Math.max(10000, cac);
         }
 
         function calculateQuarterResults() {
