@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neo Cloud Startup Simulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 16px;
+        }
+
+        .game-content {
+            padding: 30px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .metric-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            border-left: 4px solid #667eea;
+            position: relative;
+        }
+
+        .metric-card.danger {
+            border-left-color: #e74c3c;
+        }
+
+        .metric-card.success {
+            border-left-color: #2ecc71;
+        }
+
+        .metric-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+            cursor: help;
+        }
+
+        .metric-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .metric-subtext {
+            font-size: 12px;
+            color: #95a5a6;
+            margin-top: 5px;
+        }
+
+        .quarter-info {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .quarter-info h2 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+
+        .decision-section {
+            margin-bottom: 30px;
+        }
+
+        .decision-section h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .decision-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .decision-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+
+        .decision-title {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .decision-description {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .option-btn {
+            background: white;
+            border: 2px solid #ddd;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .option-btn:hover {
+            border-color: #667eea;
+            background: #f0f2ff;
+        }
+
+        .option-btn.selected {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+        }
+
+        .toggle-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+            flex-shrink: 0;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 26px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #667eea;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+
+        .toggle-label {
+            flex-grow: 1;
+            font-size: 14px;
+            color: #2c3e50;
+        }
+
+        .action-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .event-notification {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .event-notification.info {
+            background: #f0f7ff;
+            border-left-color: #667eea;
+        }
+
+        .event-notification.warning {
+            background: #fff3e0;
+            border-left-color: #ff9800;
+        }
+
+        .event-notification.danger {
+            background: #ffebee;
+            border-left-color: #f44336;
+        }
+
+        .event-notification.success {
+            background: #e8f5e9;
+            border-left-color: #4caf50;
+        }
+
+        .event-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+
+        .event-text {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .lesson-box {
+            background: #f0f7ff;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .lesson-box h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .lesson-box p {
+            color: #2c3e50;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .tooltip {
+            position: relative;
+            cursor: help;
+            text-decoration: underline dotted;
+        }
+
+        .tooltip::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2c3e50;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            z-index: 1000;
+            margin-bottom: 5px;
+        }
+
+        .tooltip::before {
+            content: '';
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 5px solid transparent;
+            border-top-color: #2c3e50;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            z-index: 1000;
+        }
+
+        .tooltip:hover::after,
+        .tooltip:hover::before {
+            opacity: 1;
+        }
+
+        .game-over {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .game-over h2 {
+            font-size: 36px;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+
+        .game-over p {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .restart-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .restart-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .intro-screen {
+            padding: 40px;
+            text-align: center;
+        }
+
+        .intro-screen h2 {
+            font-size: 28px;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+
+        .intro-screen p {
+            font-size: 16px;
+            color: #666;
+            line-height: 1.8;
+            margin-bottom: 15px;
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 30px;
+        }
+
+        .start-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Neo Cloud Startup Simulator</h1>
+            <p>Learn how AI infrastructure startups and VCs think about business</p>
+        </div>
+        <div class="game-content" id="gameContent">
+            <!-- Content will be dynamically inserted here -->
+        </div>
+    </div>
+
+    <script>
+        // Game State
+        let gameState = {
+            quarter: 1,
+            cash: 5000000, // $5M seed funding
+            revenue: 50000, // Monthly recurring revenue
+            customers: 5,
+            burnRate: 400000, // Monthly burn
+            runway: 12, // Months
+            grossMargin: 20, // Percentage
+            revenueGrowth: 15, // MoM %
+            cac: 50000, // Customer acquisition cost
+            ltv: 180000, // Lifetime value
+            churnRate: 5, // Monthly %
+            teamSize: 8,
+            infrastructure: 'basic',
+            pricingModel: 'usage',
+            currentDecisions: {},
+            events: []
+        };
+
+        const decisions = {
+            pricing: null,
+            infrastructure: null,
+            sales: null,
+            product: null
+        };
+
+        // Game Functions
+        function formatCurrency(amount) {
+            if (amount >= 1000000) {
+                return '$' + (amount / 1000000).toFixed(1) + 'M';
+            }
+            return '$' + (amount / 1000).toFixed(0) + 'K';
+        }
+
+        function showIntro() {
+            const content = `
+                <div class="intro-screen">
+                    <h2>Welcome to the Neo Cloud World</h2>
+                    <p>You're the CEO of a neo cloud startup that provides AI infrastructure to companies building the next generation of AI applications.</p>
+                    <p>You just raised $5M in seed funding. Your job is to build a sustainable, high-growth business that can raise a Series A and beyond.</p>
+                    <p><strong>The Goal:</strong> Grow your revenue, manage your burn rate, and make strategic decisions that VCs care about: unit economics, gross margins, and scalable growth.</p>
+                    <p>Each quarter, you'll face critical decisions about pricing, infrastructure, sales, and product. Your choices will determine your startup's fate.</p>
+                    <button class="start-btn" onclick="startGame()">Start Your Journey</button>
+                </div>
+            `;
+            document.getElementById('gameContent').innerHTML = content;
+        }
+
+        function startGame() {
+            gameState = {
+                quarter: 1,
+                cash: 5000000,
+                revenue: 50000,
+                customers: 5,
+                burnRate: 400000,
+                runway: 12,
+                grossMargin: 20,
+                revenueGrowth: 15,
+                cac: 50000,
+                ltv: 180000,
+                churnRate: 5,
+                teamSize: 8,
+                infrastructure: 'basic',
+                pricingModel: 'usage',
+                currentDecisions: {},
+                events: []
+            };
+            renderGame();
+        }
+
+        function renderGame() {
+            if (gameState.cash <= 0) {
+                showGameOver('bankrupt');
+                return;
+            }
+
+            if (gameState.quarter > 8 && gameState.revenue * 12 > 5000000 && gameState.grossMargin > 50) {
+                showGameOver('success');
+                return;
+            }
+
+            const content = `
+                ${renderEvents()}
+                ${renderMetrics()}
+                ${renderQuarterInfo()}
+                ${renderDecisions()}
+                <button class="action-btn" onclick="nextQuarter()">Complete Quarter ${gameState.quarter}</button>
+                ${renderLesson()}
+            `;
+
+            document.getElementById('gameContent').innerHTML = content;
+        }
+
+        function renderEvents() {
+            if (gameState.events.length === 0) return '';
+
+            let html = '';
+            gameState.events.forEach(event => {
+                html += `
+                    <div class="event-notification ${event.type}">
+                        <div class="event-title">${event.title}</div>
+                        <div class="event-text">${event.text}</div>
+                    </div>
+                `;
+            });
+            return html;
+        }
+
+        function renderMetrics() {
+            const runwayClass = gameState.runway < 6 ? 'danger' : gameState.runway < 9 ? '' : 'success';
+            const marginClass = gameState.grossMargin < 30 ? 'danger' : gameState.grossMargin > 50 ? 'success' : '';
+            const growthClass = gameState.revenueGrowth < 10 ? 'danger' : gameState.revenueGrowth > 20 ? 'success' : '';
+
+            return `
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">Cash Remaining</div>
+                        <div class="metric-value">${formatCurrency(gameState.cash)}</div>
+                        <div class="metric-subtext">Burn: ${formatCurrency(gameState.burnRate)}/mo</div>
+                    </div>
+                    <div class="metric-card ${runwayClass}">
+                        <div class="metric-label tooltip" data-tooltip="How many months until you run out of money">Runway</div>
+                        <div class="metric-value">${gameState.runway} mo</div>
+                        <div class="metric-subtext">${gameState.runway < 6 ? 'Critical!' : gameState.runway < 9 ? 'Low' : 'Healthy'}</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label tooltip" data-tooltip="Monthly Recurring Revenue">MRR</div>
+                        <div class="metric-value">${formatCurrency(gameState.revenue)}</div>
+                        <div class="metric-subtext">ARR: ${formatCurrency(gameState.revenue * 12)}</div>
+                    </div>
+                    <div class="metric-card ${growthClass}">
+                        <div class="metric-label tooltip" data-tooltip="Month-over-Month revenue growth">MoM Growth</div>
+                        <div class="metric-value">${gameState.revenueGrowth}%</div>
+                        <div class="metric-subtext">${gameState.revenueGrowth > 20 ? 'Excellent!' : gameState.revenueGrowth > 10 ? 'Good' : 'Slow'}</div>
+                    </div>
+                    <div class="metric-card ${marginClass}">
+                        <div class="metric-label tooltip" data-tooltip="Revenue minus cost of goods sold">Gross Margin</div>
+                        <div class="metric-value">${gameState.grossMargin}%</div>
+                        <div class="metric-subtext">${gameState.grossMargin > 50 ? 'Great!' : gameState.grossMargin > 30 ? 'OK' : 'Poor'}</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label tooltip" data-tooltip="Customer Acquisition Cost vs Lifetime Value">CAC / LTV</div>
+                        <div class="metric-value">${formatCurrency(gameState.cac)} / ${formatCurrency(gameState.ltv)}</div>
+                        <div class="metric-subtext">Ratio: ${(gameState.ltv / gameState.cac).toFixed(1)}x</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Customers</div>
+                        <div class="metric-value">${gameState.customers}</div>
+                        <div class="metric-subtext">Churn: ${gameState.churnRate}%/mo</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Team Size</div>
+                        <div class="metric-value">${gameState.teamSize}</div>
+                        <div class="metric-subtext">Engineers: ${Math.floor(gameState.teamSize * 0.6)}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderQuarterInfo() {
+            let stage = 'Seed';
+            let goal = '';
+
+            if (gameState.quarter <= 2) {
+                goal = 'Focus on finding product-market fit and early customers.';
+            } else if (gameState.quarter <= 4) {
+                goal = 'Prove your unit economics and establish repeatable sales.';
+            } else if (gameState.quarter <= 6) {
+                goal = 'Scale revenue and improve margins for Series A readiness.';
+            } else {
+                stage = 'Series A Ready?';
+                goal = 'VCs want to see $5M+ ARR, 50%+ gross margins, and strong growth.';
+            }
+
+            return `
+                <div class="quarter-info">
+                    <h2>Quarter ${gameState.quarter} - ${stage} Stage</h2>
+                    <p>${goal}</p>
+                </div>
+            `;
+        }
+
+        function renderDecisions() {
+            return `
+                <div class="decision-section">
+                    <h3>Strategic Decisions for This Quarter</h3>
+
+                    <div class="decision-card">
+                        <div class="decision-title">Pricing Strategy</div>
+                        <div class="decision-description">How will you price your AI infrastructure?</div>
+                        <div class="options">
+                            <button class="option-btn" onclick="selectDecision('pricing', 'premium')">
+                                <strong>Premium Pricing:</strong> Higher margins, fewer customers, better support<br>
+                                <small style="opacity: 0.7;">Impact: +5% margin, -3% growth, -1% churn</small>
+                            </button>
+                            <button class="option-btn" onclick="selectDecision('pricing', 'market')">
+                                <strong>Market Rate:</strong> Competitive pricing, balanced growth<br>
+                                <small style="opacity: 0.7;">Impact: No change to metrics</small>
+                            </button>
+                            <button class="option-btn" onclick="selectDecision('pricing', 'aggressive')">
+                                <strong>Aggressive Discounting:</strong> Land grab strategy, lower margins<br>
+                                <small style="opacity: 0.7;">Impact: -5% margin, +5% growth, +2% churn</small>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="decision-card">
+                        <div class="decision-title">Infrastructure Investment</div>
+                        <div class="decision-description">Where will you invest in your infrastructure?</div>
+                        <div class="options">
+                            <button class="option-btn" onclick="selectDecision('infrastructure', 'performance')">
+                                <strong>Performance Optimization:</strong> Improve margins through efficiency<br>
+                                <small style="opacity: 0.7;">Cost: +$50K/mo burn | Impact: +3% margin</small>
+                            </button>
+                            <button class="option-btn" onclick="selectDecision('infrastructure', 'features')">
+                                <strong>New Features:</strong> Attract new customer segments<br>
+                                <small style="opacity: 0.7;">Cost: +$80K/mo burn | Impact: +4% growth, -$5K CAC</small>
+                            </button>
+                            <button class="option-btn" onclick="selectDecision('infrastructure', 'minimal')">
+                                <strong>Minimal Investment:</strong> Conserve cash, maintain current offering<br>
+                                <small style="opacity: 0.7;">Cost: -$30K/mo burn | Impact: +1% churn</small>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="decision-card">
+                        <div class="decision-title">Sales & Marketing</div>
+                        <div class="decision-description">How aggressive will your go-to-market be?</div>
+                        <div class="options">
+                            <button class="option-btn" onclick="selectDecision('sales', 'aggressive')">
+                                <strong>Aggressive Growth:</strong> Hire 3 AEs, increase marketing spend<br>
+                                <small style="opacity: 0.7;">Cost: +$180K/mo burn | Impact: +8% growth, +3 team</small>
+                            </button>
+                            <button class="option-btn" onclick="selectDecision('sales', 'balanced')">
+                                <strong>Balanced Approach:</strong> Hire 1 AE, moderate marketing<br>
+                                <small style="opacity: 0.7;">Cost: +$80K/mo burn | Impact: +4% growth, +1 team</small>
+                            </button>
+                            <button class="option-btn" onclick="selectDecision('sales', 'lean')">
+                                <strong>Lean Sales:</strong> Founder-led sales, minimal marketing<br>
+                                <small style="opacity: 0.7;">Cost: -$20K/mo burn | Impact: +1% growth</small>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="decision-card">
+                        <div class="decision-title">Customer Focus</div>
+                        <div class="decision-description">Which customer segment will you target?</div>
+                        <div class="options">
+                            <button class="option-btn" onclick="selectDecision('customer', 'enterprise')">
+                                <strong>Enterprise:</strong> Large contracts, long sales cycles, high LTV<br>
+                                <small style="opacity: 0.7;">Impact: +$40K LTV, +$20K CAC, -2% churn, -2% growth</small>
+                            </button>
+                            <button class="option-btn" onclick="selectDecision('customer', 'midmarket')">
+                                <strong>Mid-Market:</strong> Faster sales, good economics, more competition<br>
+                                <small style="opacity: 0.7;">Impact: Balanced metrics, no major changes</small>
+                            </button>
+                            <button class="option-btn" onclick="selectDecision('customer', 'smb')">
+                                <strong>SMB/Startups:</strong> Quick wins, usage-based, higher churn<br>
+                                <small style="opacity: 0.7;">Impact: -$30K LTV, -$15K CAC, +3% churn, +3% growth</small>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function selectDecision(category, option) {
+            gameState.currentDecisions[category] = option;
+
+            // Update UI to show selection
+            const buttons = document.querySelectorAll('.option-btn');
+            buttons.forEach(btn => {
+                const onclick = btn.getAttribute('onclick');
+                if (onclick && onclick.includes(`'${category}'`)) {
+                    // This button belongs to the current category
+                    if (onclick.includes(`'${option}'`)) {
+                        btn.classList.add('selected');
+                    } else {
+                        btn.classList.remove('selected');
+                    }
+                }
+            });
+        }
+
+        function renderLesson() {
+            const lessons = [
+                {
+                    quarter: 1,
+                    title: "VC Lesson: Unit Economics Matter",
+                    text: "VCs look at CAC (Customer Acquisition Cost) vs LTV (Lifetime Value). A healthy ratio is 3:1 or better. If it costs you $50K to acquire a customer who generates $150K over their lifetime, that's a good business."
+                },
+                {
+                    quarter: 2,
+                    title: "VC Lesson: Gross Margin is King",
+                    text: "Neo cloud providers need 50%+ gross margins to be attractive to VCs. This means your infrastructure costs (COGS) must be less than 50% of your revenue. Efficiency and optimization are critical."
+                },
+                {
+                    quarter: 3,
+                    title: "VC Lesson: Growth vs. Efficiency",
+                    text: "The 'Rule of 40' states that growth rate + profit margin should exceed 40%. High-growth companies can burn more cash, but you must show a path to profitability."
+                },
+                {
+                    quarter: 4,
+                    title: "VC Lesson: Runway Management",
+                    text: "Always maintain 12+ months of runway. If you dip below 6 months, you're in the danger zone. Start fundraising when you have 9-12 months left - it takes 3-6 months to close a round."
+                },
+                {
+                    quarter: 5,
+                    title: "VC Lesson: Market Positioning",
+                    text: "In a crowded market with a dozen neo cloud providers, differentiation is key. VCs want to see defensible advantages: better performance, unique features, or superior economics."
+                },
+                {
+                    quarter: 6,
+                    title: "VC Lesson: Series A Metrics",
+                    text: "For Series A, VCs typically want to see: $1-3M ARR, 100%+ growth rate, strong gross margins (50%+), and proven GTM motion. Enterprise focus often leads to better unit economics."
+                },
+                {
+                    quarter: 7,
+                    title: "VC Lesson: Competitive Landscape",
+                    text: "With 12+ neo cloud providers at Series A or later, VCs look for: differentiated technology, better margins, or a specific vertical focus. 'Me too' doesn't work."
+                },
+                {
+                    quarter: 8,
+                    title: "VC Lesson: Path to Scale",
+                    text: "VCs invest in businesses that can reach $100M+ ARR. Show them: expanding gross margins, improving sales efficiency, and a large addressable market in AI infrastructure."
+                }
+            ];
+
+            const lesson = lessons[Math.min(gameState.quarter - 1, lessons.length - 1)];
+            return `
+                <div class="lesson-box">
+                    <h4>${lesson.title}</h4>
+                    <p>${lesson.text}</p>
+                </div>
+            `;
+        }
+
+        function nextQuarter() {
+            // Clear previous events
+            gameState.events = [];
+
+            // Generate decision summary before clearing decisions
+            const decisionSummary = generateDecisionSummary();
+
+            // Apply decisions and calculate effects
+            applyDecisions();
+
+            // Calculate quarter results
+            calculateQuarterResults();
+
+            // Add decision summary as an event
+            if (decisionSummary) {
+                gameState.events.unshift({
+                    type: 'info',
+                    title: `Quarter ${gameState.quarter} Results`,
+                    text: decisionSummary
+                });
+            }
+
+            // Random events
+            triggerRandomEvents();
+
+            // Move to next quarter
+            gameState.quarter++;
+
+            // Update runway
+            if (gameState.burnRate > 0) {
+                gameState.runway = Math.floor(gameState.cash / gameState.burnRate);
+            }
+
+            // Clear current decisions
+            gameState.currentDecisions = {};
+
+            // Re-render
+            renderGame();
+        }
+
+        function generateDecisionSummary() {
+            const { pricing, infrastructure, sales, customer } = gameState.currentDecisions;
+            if (!pricing && !infrastructure && !sales && !customer) {
+                return null;
+            }
+
+            let summary = '<strong>Your Strategic Decisions:</strong><br><br>';
+
+            if (pricing === 'premium') {
+                summary += '📈 <strong>Pricing:</strong> Went premium - improved margins but slower customer acquisition.<br>';
+            } else if (pricing === 'aggressive') {
+                summary += '💰 <strong>Pricing:</strong> Aggressive discounting - faster growth at the cost of margins.<br>';
+            } else if (pricing === 'market') {
+                summary += '⚖️ <strong>Pricing:</strong> Market rate pricing - balanced approach.<br>';
+            }
+
+            if (infrastructure === 'performance') {
+                summary += '⚡ <strong>Infrastructure:</strong> Optimized performance - better margins, increased engineering costs.<br>';
+            } else if (infrastructure === 'features') {
+                summary += '🚀 <strong>Infrastructure:</strong> Built new features - attracted more customers, higher R&D spend.<br>';
+            } else if (infrastructure === 'minimal') {
+                summary += '💸 <strong>Infrastructure:</strong> Minimal investment - conserved cash, risked customer satisfaction.<br>';
+            }
+
+            if (sales === 'aggressive') {
+                summary += '📊 <strong>Sales:</strong> Aggressive hiring - 3 new AEs added, significant burn increase, strong growth.<br>';
+            } else if (sales === 'balanced') {
+                summary += '📈 <strong>Sales:</strong> Balanced growth - hired 1 AE, moderate spend increase.<br>';
+            } else if (sales === 'lean') {
+                summary += '🎯 <strong>Sales:</strong> Lean approach - founder-led sales, minimal burn.<br>';
+            }
+
+            if (customer === 'enterprise') {
+                summary += '🏢 <strong>Customer:</strong> Targeted enterprise - higher LTV and CAC, lower churn, slower cycles.<br>';
+            } else if (customer === 'midmarket') {
+                summary += '🏪 <strong>Customer:</strong> Focused on mid-market - balanced metrics across the board.<br>';
+            } else if (customer === 'smb') {
+                summary += '🚀 <strong>Customer:</strong> Pursued SMB/startups - quick wins, lower economics, higher churn.<br>';
+            }
+
+            return summary;
+        }
+
+        function applyDecisions() {
+            const { pricing, infrastructure, sales, customer } = gameState.currentDecisions;
+
+            // Pricing impact
+            if (pricing === 'premium') {
+                gameState.grossMargin += 5;
+                gameState.revenueGrowth -= 3;
+                gameState.churnRate -= 1;
+            } else if (pricing === 'aggressive') {
+                gameState.grossMargin -= 5;
+                gameState.revenueGrowth += 5;
+                gameState.churnRate += 2;
+            }
+
+            // Infrastructure impact
+            if (infrastructure === 'performance') {
+                gameState.grossMargin += 3;
+                gameState.burnRate += 50000;
+            } else if (infrastructure === 'features') {
+                gameState.revenueGrowth += 4;
+                gameState.burnRate += 80000;
+                gameState.cac -= 5000;
+            } else if (infrastructure === 'minimal') {
+                gameState.burnRate -= 30000;
+                gameState.churnRate += 1;
+            }
+
+            // Sales impact
+            if (sales === 'aggressive') {
+                gameState.revenueGrowth += 8;
+                gameState.burnRate += 180000;
+                gameState.teamSize += 3;
+            } else if (sales === 'balanced') {
+                gameState.revenueGrowth += 4;
+                gameState.burnRate += 80000;
+                gameState.teamSize += 1;
+            } else if (sales === 'lean') {
+                gameState.revenueGrowth += 1;
+                gameState.burnRate -= 20000;
+            }
+
+            // Customer segment impact
+            if (customer === 'enterprise') {
+                gameState.ltv += 40000;
+                gameState.cac += 20000;
+                gameState.churnRate -= 2;
+                gameState.revenueGrowth -= 2; // Slower sales cycles
+            } else if (customer === 'smb') {
+                gameState.ltv -= 30000;
+                gameState.cac -= 15000;
+                gameState.churnRate += 3;
+                gameState.revenueGrowth += 3;
+            }
+
+            // Bounds checking
+            gameState.grossMargin = Math.max(10, Math.min(70, gameState.grossMargin));
+            gameState.revenueGrowth = Math.max(0, Math.min(50, gameState.revenueGrowth));
+            gameState.churnRate = Math.max(1, Math.min(15, gameState.churnRate));
+        }
+
+        function calculateQuarterResults() {
+            // Apply growth over 3 months
+            for (let month = 0; month < 3; month++) {
+                // Grow revenue
+                const newRevenue = gameState.revenue * (1 + gameState.revenueGrowth / 100);
+                const revenueIncrease = newRevenue - gameState.revenue;
+                gameState.revenue = newRevenue;
+
+                // Add customers based on revenue increase and average revenue per customer
+                const avgRevenuePerCustomer = gameState.revenue / gameState.customers;
+                const newCustomers = Math.floor(revenueIncrease / avgRevenuePerCustomer);
+                gameState.customers += newCustomers;
+
+                // Apply churn
+                const churnedCustomers = Math.floor(gameState.customers * (gameState.churnRate / 100));
+                gameState.customers -= churnedCustomers;
+                gameState.revenue -= churnedCustomers * avgRevenuePerCustomer;
+
+                // Burn cash
+                const grossProfit = gameState.revenue * (gameState.grossMargin / 100);
+                const netBurn = gameState.burnRate - grossProfit;
+                gameState.cash -= netBurn;
+            }
+
+            // Ensure minimum customers
+            gameState.customers = Math.max(1, gameState.customers);
+        }
+
+        function triggerRandomEvents() {
+            const events = [];
+
+            // Market events
+            if (Math.random() < 0.3 && gameState.quarter > 2) {
+                events.push({
+                    type: 'warning',
+                    title: 'Market Update: Competitor Raises Series B',
+                    text: 'A competing neo cloud provider just raised $30M Series B. They\'re likely to increase marketing spend and potentially undercut on pricing. VCs will compare your metrics to theirs.'
+                });
+            }
+
+            if (Math.random() < 0.2 && gameState.quarter > 3) {
+                events.push({
+                    type: 'success',
+                    title: 'Market Opportunity: AI Boom Continues',
+                    text: 'Demand for AI infrastructure is surging. Several large companies are seeking neo cloud providers. Great timing for aggressive growth!'
+                });
+            }
+
+            // Customer events
+            if (Math.random() < 0.25 && gameState.customers > 10) {
+                const churnedRevenue = gameState.revenue * 0.15;
+                gameState.revenue -= churnedRevenue;
+                gameState.customers = Math.floor(gameState.customers * 0.85);
+                events.push({
+                    type: 'danger',
+                    title: 'Major Customer Churned',
+                    text: `Lost a key customer to a competitor with better GPU availability. Revenue impact: ${formatCurrency(churnedRevenue)}/mo. This highlights the importance of infrastructure reliability.`
+                });
+            }
+
+            if (Math.random() < 0.2 && gameState.quarter > 4) {
+                const deal = gameState.revenue * 0.3;
+                gameState.revenue += deal;
+                gameState.customers += 1;
+                events.push({
+                    type: 'success',
+                    title: 'Enterprise Deal Closed!',
+                    text: `Just landed a major enterprise customer! Contract value: ${formatCurrency(deal)}/mo. This significantly improves your ARR for fundraising.`
+                });
+            }
+
+            // Fundraising events
+            if (gameState.runway < 6 && gameState.quarter > 3) {
+                events.push({
+                    type: 'danger',
+                    title: 'VC Alert: Low Runway',
+                    text: 'Your runway is critical. You should be actively fundraising NOW. VCs need 3-6 months to complete due diligence. Consider bridge financing or cutting burn.'
+                });
+            }
+
+            if (gameState.quarter === 6 && gameState.revenue * 12 > 2000000 && gameState.grossMargin > 40) {
+                events.push({
+                    type: 'success',
+                    title: 'VC Interest: Series A Inbound',
+                    text: 'Your metrics are attracting attention! Multiple VCs have reached out about a Series A. Your strong gross margins and growth rate are exactly what they want to see in neo cloud infrastructure.'
+                });
+            }
+
+            // Show one random event if any occurred
+            if (events.length > 0) {
+                gameState.events.push(events[Math.floor(Math.random() * events.length)]);
+            }
+        }
+
+        function showGameOver(reason) {
+            let content = '';
+
+            if (reason === 'bankrupt') {
+                content = `
+                    <div class="game-over">
+                        <h2>Game Over: Out of Cash</h2>
+                        <p>You've run out of money. Your neo cloud startup is shutting down.</p>
+                        <p><strong>Final Metrics:</strong></p>
+                        <p>ARR: ${formatCurrency(gameState.revenue * 12)}<br>
+                        Gross Margin: ${gameState.grossMargin}%<br>
+                        Customers: ${gameState.customers}<br>
+                        Quarters Survived: ${gameState.quarter}</p>
+                        <p><strong>Lesson:</strong> Managing burn rate and runway is critical. Always keep 12+ months of cash, and start fundraising before you hit 9 months of runway.</p>
+                        <button class="restart-btn" onclick="showIntro()">Try Again</button>
+                    </div>
+                `;
+            } else if (reason === 'success') {
+                const arr = gameState.revenue * 12;
+                content = `
+                    <div class="game-over">
+                        <h2>Success: Series A Ready!</h2>
+                        <p>Congratulations! You've built a neo cloud startup that VCs want to fund.</p>
+                        <p><strong>Final Metrics:</strong></p>
+                        <p>ARR: ${formatCurrency(arr)}<br>
+                        Gross Margin: ${gameState.grossMargin}%<br>
+                        MoM Growth: ${gameState.revenueGrowth}%<br>
+                        Customers: ${gameState.customers}<br>
+                        CAC/LTV Ratio: ${(gameState.ltv / gameState.cac).toFixed(1)}x</p>
+                        <p><strong>VC Perspective:</strong> You've demonstrated strong unit economics, healthy growth, and excellent gross margins. You're well-positioned to raise a Series A and scale to $100M+ ARR!</p>
+                        <button class="restart-btn" onclick="showIntro()">Play Again</button>
+                    </div>
+                `;
+            }
+
+            document.getElementById('gameContent').innerHTML = content;
+        }
+
+        // Initialize game
+        showIntro();
+    </script>
+</body>
+</html>
