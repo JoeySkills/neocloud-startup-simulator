@@ -453,6 +453,7 @@
             revenue: 50000, // Monthly recurring revenue
             customers: 5,
             burnRate: 400000, // Monthly burn
+            baseBurnRate: 400000, // Base monthly burn (tracks permanent changes)
             runway: 12, // Months
             grossMargin: 20, // Percentage
             revenueGrowth: 15, // MoM %
@@ -502,6 +503,7 @@
                 revenue: 50000,
                 customers: 5,
                 burnRate: 400000,
+                baseBurnRate: 400000,
                 runway: 12,
                 grossMargin: 20,
                 revenueGrowth: 15,
@@ -870,6 +872,15 @@
         function applyDecisions() {
             const { pricing, infrastructure, sales, customer } = gameState.currentDecisions;
 
+            // Store previous quarter's base burn rate if not set
+            if (!gameState.baseBurnRate) {
+                gameState.baseBurnRate = 400000; // Initial base burn
+            }
+
+            // Reset to base burn rate before applying this quarter's decisions
+            // This ensures we're making marginal changes, not cumulative ones
+            let quarterlyBurnModifier = 0;
+
             // Pricing impact
             if (pricing === 'premium') {
                 gameState.grossMargin += 5;
@@ -884,29 +895,33 @@
             // Infrastructure impact
             if (infrastructure === 'performance') {
                 gameState.grossMargin += 3;
-                gameState.burnRate += 50000;
+                quarterlyBurnModifier += 50000;
             } else if (infrastructure === 'features') {
                 gameState.revenueGrowth += 4;
-                gameState.burnRate += 80000;
+                quarterlyBurnModifier += 80000;
                 gameState.cac -= 5000;
             } else if (infrastructure === 'minimal') {
-                gameState.burnRate -= 30000;
+                quarterlyBurnModifier -= 30000;
                 gameState.churnRate += 1;
             }
 
             // Sales impact
             if (sales === 'aggressive') {
                 gameState.revenueGrowth += 8;
-                gameState.burnRate += 180000;
+                quarterlyBurnModifier += 180000;
                 gameState.teamSize += 3;
             } else if (sales === 'balanced') {
                 gameState.revenueGrowth += 4;
-                gameState.burnRate += 80000;
+                quarterlyBurnModifier += 80000;
                 gameState.teamSize += 1;
             } else if (sales === 'lean') {
                 gameState.revenueGrowth += 1;
-                gameState.burnRate -= 20000;
+                quarterlyBurnModifier -= 20000;
             }
+
+            // Apply the burn modifier to the base burn rate (one-time permanent increase)
+            gameState.baseBurnRate += quarterlyBurnModifier;
+            gameState.burnRate = gameState.baseBurnRate;
 
             // Customer segment impact
             if (customer === 'enterprise') {
