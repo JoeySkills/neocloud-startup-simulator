@@ -432,6 +432,70 @@
             box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
             transition: all 0.3s;
         }
+
+        .difficulty-selection {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin: 30px 0;
+        }
+
+        .difficulty-btn {
+            background: white;
+            border: 3px solid #ddd;
+            padding: 20px 30px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex: 1;
+            max-width: 250px;
+        }
+
+        .difficulty-btn:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .difficulty-btn h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 20px;
+        }
+
+        .difficulty-btn p {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        .difficulty-btn.easy {
+            border-color: #2ecc71;
+        }
+
+        .difficulty-btn.easy:hover {
+            border-color: #27ae60;
+            background: #e8f5e9;
+        }
+
+        .difficulty-btn.medium {
+            border-color: #f39c12;
+        }
+
+        .difficulty-btn.medium:hover {
+            border-color: #e67e22;
+            background: #fff3e0;
+        }
+
+        .difficulty-btn.hard {
+            border-color: #e74c3c;
+        }
+
+        .difficulty-btn.hard:hover {
+            border-color: #c0392b;
+            background: #ffebee;
+        }
     </style>
 </head>
 <body>
@@ -464,7 +528,9 @@
             infrastructure: 'basic',
             pricingModel: 'usage',
             currentDecisions: {},
-            events: []
+            events: [],
+            difficulty: 'medium',
+            difficultyName: 'Medium Mode'
         };
 
         const decisions = {
@@ -487,24 +553,64 @@
                 <div class="intro-screen">
                     <h2>Welcome to the Neo Cloud World</h2>
                     <p>You're the CEO of a neo cloud startup that provides AI infrastructure to companies building the next generation of AI applications.</p>
-                    <p>You just raised $5M in seed funding. Your job is to build a sustainable, high-growth business that can raise a Series A and beyond.</p>
                     <p><strong>The Goal:</strong> Grow your revenue, manage your burn rate, and make strategic decisions that VCs care about: unit economics, gross margins, and scalable growth.</p>
                     <p>Each quarter, you'll face critical decisions about pricing, infrastructure, sales, and product. Your choices will determine your startup's fate.</p>
-                    <button class="start-btn" onclick="startGame()">Start Your Journey</button>
+
+                    <h3 style="margin-top: 30px; margin-bottom: 20px; color: #2c3e50;">Choose Your Difficulty</h3>
+
+                    <div class="difficulty-selection">
+                        <button class="difficulty-btn easy" onclick="startGame('easy')">
+                            <h3>Easy Mode</h3>
+                            <p><strong>$8M Starting Cash</strong></p>
+                            <p>More runway to learn and experiment with different strategies.</p>
+                        </button>
+
+                        <button class="difficulty-btn medium" onclick="startGame('medium')">
+                            <h3>Medium Mode</h3>
+                            <p><strong>$5M Starting Cash</strong></p>
+                            <p>Standard seed funding. Balanced challenge requiring smart decisions.</p>
+                        </button>
+
+                        <button class="difficulty-btn hard" onclick="startGame('hard')">
+                            <h3>Hard Mode</h3>
+                            <p><strong>$3M Starting Cash</strong></p>
+                            <p>Tight runway. Every decision matters. For experienced players only.</p>
+                        </button>
+                    </div>
                 </div>
             `;
             document.getElementById('gameContent').innerHTML = content;
         }
 
-        function startGame() {
+        function startGame(difficulty = 'medium') {
+            // Set starting cash based on difficulty
+            let startingCash;
+            let difficultyName;
+
+            switch(difficulty) {
+                case 'easy':
+                    startingCash = 8000000;
+                    difficultyName = 'Easy Mode';
+                    break;
+                case 'hard':
+                    startingCash = 3000000;
+                    difficultyName = 'Hard Mode';
+                    break;
+                case 'medium':
+                default:
+                    startingCash = 5000000;
+                    difficultyName = 'Medium Mode';
+                    break;
+            }
+
             gameState = {
                 quarter: 1,
-                cash: 5000000,
+                cash: startingCash,
                 revenue: 50000,
                 customers: 5,
                 burnRate: 400000,
                 baseBurnRate: 400000,
-                runway: 12,
+                runway: Math.floor(startingCash / 400000),
                 grossMargin: 20,
                 revenueGrowth: 15,
                 cac: 50000,
@@ -514,12 +620,17 @@
                 infrastructure: 'basic',
                 pricingModel: 'usage',
                 currentDecisions: {},
-                events: []
+                events: [],
+                difficulty: difficulty,
+                difficultyName: difficultyName
             };
             renderGame();
         }
 
         function renderGame() {
+            // Scroll to top of page
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
             if (gameState.cash <= 0) {
                 showGameOver('bankrupt');
                 return;
@@ -623,9 +734,11 @@
                 goal = 'VCs want to see $5M+ ARR, 50%+ gross margins, and strong growth.';
             }
 
+            const difficultyBadge = gameState.difficultyName ? `<span style="float: right; background: #667eea; color: white; padding: 5px 15px; border-radius: 20px; font-size: 14px;">${gameState.difficultyName}</span>` : '';
+
             return `
                 <div class="quarter-info">
-                    <h2>Quarter ${gameState.quarter} - ${stage} Stage</h2>
+                    <h2>Quarter ${gameState.quarter} - ${stage} Stage ${difficultyBadge}</h2>
                     <p>${goal}</p>
                 </div>
             `;
@@ -1044,12 +1157,16 @@
         }
 
         function showGameOver(reason) {
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
             let content = '';
+            const difficultyTag = gameState.difficultyName ? ` (${gameState.difficultyName})` : '';
 
             if (reason === 'bankrupt') {
                 content = `
                     <div class="game-over">
-                        <h2>Game Over: Out of Cash</h2>
+                        <h2>Game Over: Out of Cash${difficultyTag}</h2>
                         <p>You've run out of money. Your neo cloud startup is shutting down.</p>
                         <p><strong>Final Metrics:</strong></p>
                         <p>ARR: ${formatCurrency(gameState.revenue * 12)}<br>
@@ -1064,14 +1181,15 @@
                 const arr = gameState.revenue * 12;
                 content = `
                     <div class="game-over">
-                        <h2>Success: Series A Ready!</h2>
+                        <h2>Success: Series A Ready!${difficultyTag}</h2>
                         <p>Congratulations! You've built a neo cloud startup that VCs want to fund.</p>
                         <p><strong>Final Metrics:</strong></p>
                         <p>ARR: ${formatCurrency(arr)}<br>
                         Gross Margin: ${gameState.grossMargin}%<br>
                         MoM Growth: ${gameState.revenueGrowth}%<br>
                         Customers: ${gameState.customers}<br>
-                        CAC/LTV Ratio: ${(gameState.ltv / gameState.cac).toFixed(1)}x</p>
+                        CAC/LTV Ratio: ${(gameState.ltv / gameState.cac).toFixed(1)}x<br>
+                        Cash Remaining: ${formatCurrency(gameState.cash)}</p>
                         <p><strong>VC Perspective:</strong> You've demonstrated strong unit economics, healthy growth, and excellent gross margins. You're well-positioned to raise a Series A and scale to $100M+ ARR!</p>
                         <button class="restart-btn" onclick="showIntro()">Play Again</button>
                     </div>
