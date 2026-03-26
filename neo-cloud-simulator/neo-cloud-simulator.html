@@ -496,6 +496,57 @@
             border-color: #c0392b;
             background: #ffebee;
         }
+
+        .emergency-section {
+            background: #fff3cd;
+            border: 3px solid #ff9800;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .emergency-section h3 {
+            color: #856404;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .emergency-btn {
+            background: white;
+            border: 2px solid #ff9800;
+            padding: 15px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 10px;
+            width: 100%;
+        }
+
+        .emergency-btn:hover {
+            border-color: #ff9800;
+            background: #fff3e0;
+            transform: translateX(5px);
+        }
+
+        .emergency-btn.selected {
+            border-color: #ff9800;
+            background: #ff9800;
+            color: white;
+        }
+
+        .emergency-btn.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            border-color: #ddd;
+        }
+
+        .emergency-btn.disabled:hover {
+            transform: none;
+            background: white;
+        }
     </style>
 </head>
 <body>
@@ -530,7 +581,9 @@
             currentDecisions: {},
             events: [],
             difficulty: 'medium',
-            difficultyName: 'Medium Mode'
+            difficultyName: 'Medium Mode',
+            bridgeFinancingUsed: false,
+            emergencyCutsUsed: false
         };
 
         const decisions = {
@@ -622,7 +675,9 @@
                 currentDecisions: {},
                 events: [],
                 difficulty: difficulty,
-                difficultyName: difficultyName
+                difficultyName: difficultyName,
+                bridgeFinancingUsed: false,
+                emergencyCutsUsed: false
             };
             renderGame();
         }
@@ -645,6 +700,7 @@
                 ${renderEvents()}
                 ${renderMetrics()}
                 ${renderQuarterInfo()}
+                ${renderEmergencyOptions()}
                 ${renderDecisions()}
                 <button class="action-btn" onclick="nextQuarter()">Complete Quarter ${gameState.quarter}</button>
                 ${renderLesson()}
@@ -742,6 +798,79 @@
                     <p>${goal}</p>
                 </div>
             `;
+        }
+
+        function renderEmergencyOptions() {
+            // Only show emergency options when runway is critical (< 9 months)
+            if (gameState.runway >= 9) {
+                return '';
+            }
+
+            const bridgeUsed = gameState.bridgeFinancingUsed || false;
+            const costCutsUsed = gameState.emergencyCutsUsed || false;
+
+            return `
+                <div class="emergency-section">
+                    <h3>⚠️ Emergency Options - Low Runway Alert!</h3>
+                    <p style="margin-bottom: 15px; color: #856404;">Your runway is ${gameState.runway} months. Consider these emergency measures:</p>
+
+                    <button class="emergency-btn ${bridgeUsed ? 'disabled' : ''}"
+                            onclick="${bridgeUsed ? '' : 'selectEmergency(\'bridge\')'}"
+                            ${bridgeUsed ? 'disabled' : ''}>
+                        <strong>Bridge Financing Round</strong><br>
+                        Raise $1.5M emergency funding from existing investors<br>
+                        <small style="opacity: 0.7;">Impact: +$1.5M cash | Cost: 15% dilution, harder Series A</small>
+                        ${bridgeUsed ? '<br><small style="color: #e74c3c;"><strong>Already used this quarter</strong></small>' : ''}
+                    </button>
+
+                    <button class="emergency-btn ${costCutsUsed ? 'disabled' : ''}"
+                            onclick="${costCutsUsed ? '' : 'selectEmergency(\'cuts\')'}"
+                            ${costCutsUsed ? 'disabled' : ''}>
+                        <strong>Emergency Cost Cuts</strong><br>
+                        Lay off team, reduce marketing, freeze hiring<br>
+                        <small style="opacity: 0.7;">Impact: -40% burn rate | Cost: -5 team, -5% growth, +2% churn</small>
+                        ${costCutsUsed ? '<br><small style="color: #e74c3c;"><strong>Already used this quarter</strong></small>' : ''}
+                    </button>
+                </div>
+            `;
+        }
+
+        function selectEmergency(type) {
+            if (type === 'bridge') {
+                if (gameState.bridgeFinancingUsed) return;
+
+                gameState.cash += 1500000;
+                gameState.runway = Math.floor(gameState.cash / gameState.burnRate);
+                gameState.bridgeFinancingUsed = true;
+
+                gameState.events.push({
+                    type: 'warning',
+                    title: 'Bridge Financing Closed',
+                    text: 'You raised $1.5M in bridge financing. This buys you time, but VCs will scrutinize why you needed it. Make sure you show strong progress before Series A.'
+                });
+            } else if (type === 'cuts') {
+                if (gameState.emergencyCutsUsed) return;
+
+                const oldBurn = gameState.burnRate;
+                gameState.burnRate = Math.floor(gameState.burnRate * 0.6); // 40% reduction
+                gameState.teamSize = Math.max(3, gameState.teamSize - 5);
+                gameState.runway = Math.floor(gameState.cash / gameState.burnRate);
+                gameState.emergencyCutsUsed = true;
+
+                // Apply penalties to next quarter's metrics
+                gameState.emergencyCutPenalties = {
+                    growthPenalty: 5,
+                    churnPenalty: 2
+                };
+
+                gameState.events.push({
+                    type: 'danger',
+                    title: 'Emergency Cost Cuts Implemented',
+                    text: `Reduced burn from ${formatCurrency(oldBurn)}/mo to ${formatCurrency(gameState.burnRate)}/mo. Laid off ${Math.min(5, gameState.teamSize)} team members. This will hurt growth and morale.`
+                });
+            }
+
+            renderGame();
         }
 
         function renderDecisions() {
@@ -932,8 +1061,10 @@
                 gameState.runway = Math.floor(gameState.cash / gameState.burnRate);
             }
 
-            // Clear current decisions
+            // Clear current decisions and reset emergency options for next quarter
             gameState.currentDecisions = {};
+            gameState.bridgeFinancingUsed = false;
+            gameState.emergencyCutsUsed = false;
 
             // Re-render
             renderGame();
@@ -941,11 +1072,22 @@
 
         function generateDecisionSummary() {
             const { pricing, infrastructure, sales, customer } = gameState.currentDecisions;
-            if (!pricing && !infrastructure && !sales && !customer) {
+            const hasBridge = gameState.bridgeFinancingUsed;
+            const hasCuts = gameState.emergencyCutsUsed;
+
+            if (!pricing && !infrastructure && !sales && !customer && !hasBridge && !hasCuts) {
                 return null;
             }
 
             let summary = '<strong>Your Strategic Decisions:</strong><br><br>';
+
+            // Emergency actions first (if any)
+            if (hasBridge) {
+                summary += '⚠️ <strong>Bridge Financing:</strong> Raised $1.5M emergency funding - runway extended but dilution incurred.<br>';
+            }
+            if (hasCuts) {
+                summary += '⚠️ <strong>Emergency Cuts:</strong> Implemented major cost reductions - burn lowered but team morale and growth impacted.<br>';
+            }
 
             if (pricing === 'premium') {
                 summary += '📈 <strong>Pricing:</strong> Went premium - improved margins but slower customer acquisition.<br>';
@@ -999,6 +1141,13 @@
             let burn = BASE_BURN;
             let ltv = BASE_LTV;
             let cac = BASE_CAC;
+
+            // Apply emergency cut penalties if they exist
+            if (gameState.emergencyCutPenalties) {
+                growth -= gameState.emergencyCutPenalties.growthPenalty;
+                churn += gameState.emergencyCutPenalties.churnPenalty;
+                delete gameState.emergencyCutPenalties; // One-time penalty
+            }
 
             // Pricing impact
             if (pricing === 'premium') {
